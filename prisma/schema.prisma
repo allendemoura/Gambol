@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma"
+}
+
+model Boy {
+  id     Int     @id @default(autoincrement())
+  name   String  @unique
+  role   Age
+  points Point[]
+  bets   Bet[]
+}
+
+enum Age {
+  MAN
+  SHIPLET
+}
+
+model Point {
+  id    Int    @id @default(autoincrement())
+  boy   Boy    @relation(fields: [boyID], references: [id])
+  boyID Int
+  desc  String
+  point Int
+  bets  Bet[]
+
+  @@index([boyID])
+}
+
+model Bet {
+  id       Int     @id @default(autoincrement())
+  point    Point   @relation(fields: [pointID], references: [id])
+  pointID  Int
+  better   Boy     @relation(fields: [betterID], references: [id])
+  betterID Int
+  bet      Boolean
+
+  @@index([pointID])
+  @@index([betterID])
+}
