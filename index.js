@@ -70,38 +70,27 @@ app.get("/points", (req, res) => {
 app.post("/setPoint", (req, res) => {
   async function main(boy, desc, pointVal) {
     // query for boyID
-    try {
-      const ourBoy = await prisma.boy.findUniqueOrThrow({
-        where: {
-          name: boy,
-        },
-        select: {
-          id: true,
-        },
-      });
+    const ourBoy = await prisma.boy.findUniqueOrThrow({
+      where: {
+        name: boy,
+      },
+      select: {
+        id: true,
+      },
+    });
 
-      // write point
-      const point = await prisma.point.create({
-        data: {
-          boyID: ourBoy.id,
-          desc: desc,
-          point: pointVal,
-        },
-      });
-      if (point) {
-        res.status(200).send({ message: "success", point });
-      } else {
-        res.status(400).send({ message: "failure" });
-      }
-      // error handling
-    } catch (e) {
-      if (e instanceof Prisma.PrismaClientKnownRequestError) {
-        if (e.code === "P2025") {
-          res.status(400).send({ message: "Boy not found" });
-        } else {
-          res.status(400).send(JSON.stringify(e));
-        }
-      }
+    // write point
+    const point = await prisma.point.create({
+      data: {
+        boyID: ourBoy.id,
+        desc: desc,
+        point: pointVal,
+      },
+    });
+    if (point) {
+      res.status(200).send({ message: "success", point });
+    } else {
+      res.status(400).send({ message: "failure" });
     }
   }
 
@@ -119,9 +108,18 @@ app.post("/setPoint", (req, res) => {
         await prisma.$disconnect();
       })
       .catch(async (e) => {
-        console.error(e);
         await prisma.$disconnect();
-        process.exit(1);
+        if (e instanceof Prisma.PrismaClientKnownRequestError) {
+          if (e.code === "P2025") {
+            res.status(400).send({ message: "Boy not found" });
+          } else {
+            res.status(400).send(JSON.stringify(e));
+          }
+        } else {
+          console.error(e);
+          throw e;
+          process.exit(1);
+        }
       });
   }
 });
