@@ -12,9 +12,7 @@ const prisma = new PrismaClient();
 // test
 app.post("/overUnder/:id", (req, res) => {
   const { id } = req.params;
-  const boy = req.body.boy;
-  const desc = req.body.desc;
-  const point = req.body.point;
+  const { boy, desc, point } = req.body;
 
   // check req validity
   if (!boy || !desc || !point) {
@@ -91,7 +89,7 @@ app.post("/setPoint", (req, res) => {
         },
       });
       if (point) {
-        res.status(200).send({ message: "success", point: `${point}` });
+        res.status(200).send({ message: "success", point });
       } else {
         res.status(400).send({ message: "failure" });
       }
@@ -108,9 +106,7 @@ app.post("/setPoint", (req, res) => {
   }
 
   // unpack req
-  const boy = req.body.boy;
-  const desc = req.body.desc;
-  const pointVal = req.body.point;
+  const { boy, desc, pointVal } = req.body;
 
   // check req validity
   if (!boy || !desc || !pointVal) {
@@ -141,15 +137,14 @@ app.post("/addBoy", (req, res) => {
       },
     });
     if (boy) {
-      res.status(200).send({ message: "success" });
+      res.status(200).send({ message: "success", boy });
     } else {
       res.status(400).send({ message: "failure" });
     }
   }
 
   // unpack req
-  const name = req.body.name;
-  const role = req.body.role;
+  const { name, role } = req.body;
 
   // check req validity
   if (!name || !role) {
@@ -173,7 +168,7 @@ app.post("/addBoy", (req, res) => {
 
 // make bet
 app.post("/makeBet", (req, res) => {
-  async function main(pointID, better, betVal) {
+  async function main(pointID, better, bet) {
     try {
       // query for betterID
       const ourBoy = await prisma.boy.findUniqueOrThrow({
@@ -196,15 +191,27 @@ app.post("/makeBet", (req, res) => {
       });
 
       // write bet
-      const bet = await prisma.bet.create({
-        data: {
+      const theBet = await prisma.bet.upsert({
+        create: {
           betterID: ourBoy.id,
-          bet: betVal,
+          bet: bet,
           pointID: thePoint.id,
         },
+        update: {
+          bet: bet,
+        },
+        where: [
+          {
+            betterID: ourBoy.id,
+          },
+          {
+            pointID: thePoint.id,
+          },
+        ],
       });
-      if (bet) {
-        res.status(200).send({ message: "success", bet: JSON.stringify(bet) });
+
+      if (theBet) {
+        res.status(200).send({ message: "success", bet: theBet });
       } else {
         res.status(400).send({ message: "failure" });
       }
@@ -217,22 +224,21 @@ app.post("/makeBet", (req, res) => {
           res.status(400).send(JSON.stringify(e));
         }
       }
+      throw e;
     }
   }
 
   // unpack req
-  const pointID = req.body.pointID;
-  const better = req.body.better;
-  const betVal = req.body.bet;
+  const { pointID, better, bet } = req.body;
 
   // check req validity
   if (!pointID || !better) {
     res.status(400).send({ message: "request must include: pointID, better name, bet" });
-  } else if (typeof betVal != "boolean") {
+  } else if (typeof bet != "boolean") {
     res.status(400).send({ message: "bet must be a boolean: true = over, false = under" });
   } else {
     // execute
-    main(pointID, better, betVal)
+    main(pointID, better, bet)
       // prisma db connection termination
       .then(async () => {
         await prisma.$disconnect();
