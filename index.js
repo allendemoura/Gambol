@@ -137,10 +137,16 @@ app.post("/setPoint", (req, res) => {
 app.post("/addBoy", (req, res) => {
   // db create row
   async function main(name, role) {
-    const boy = await prisma.boy.create({
-      data: {
+    const boy = await prisma.boy.upsert({
+      create: {
         name: name,
         role: role,
+      },
+      update: {
+        role: role,
+      },
+      where: {
+        name: name,
       },
     });
     if (boy) {
