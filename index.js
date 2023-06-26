@@ -80,11 +80,20 @@ app.post("/setPoint", (req, res) => {
     });
 
     // write point
-    const point = await prisma.point.create({
-      data: {
+    const point = await prisma.point.upsert({
+      create: {
         boyID: ourBoy.id,
         desc: desc,
         point: pointVal,
+      },
+      update: {
+        point: pointVal,
+      },
+      where: {
+        boyID_desc: {
+          boyID: ourBoy.id,
+          desc: desc,
+        },
       },
     });
     if (point) {

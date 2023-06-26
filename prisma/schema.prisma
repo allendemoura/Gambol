@@ -29,6 +29,7 @@ model Point {
   point Int
   bets  Bet[]
 
+  @@unique([boyID, desc])
   @@index([boyID])
 }
 
