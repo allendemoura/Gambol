@@ -106,14 +106,14 @@ app.post("/setPoint", (req, res) => {
   }
 
   // unpack req
-  const { boy, desc, pointVal } = req.body;
+  const { boy, desc, point } = req.body;
 
   // check req validity
-  if (!boy || !desc || !pointVal) {
+  if (!boy || !desc || !point) {
     res.status(400).send({ message: "request must include: boy, desc, point" });
   } else {
     // execute
-    main(boy, desc, pointVal)
+    main(boy, desc, point)
       // prisma db connection termination
       .then(async () => {
         await prisma.$disconnect();
@@ -200,14 +200,12 @@ app.post("/makeBet", (req, res) => {
         update: {
           bet: bet,
         },
-        where: [
-          {
+        where: {
+          betterID_pointID: {
             betterID: ourBoy.id,
-          },
-          {
             pointID: thePoint.id,
           },
-        ],
+        },
       });
 
       if (theBet) {
