@@ -169,60 +169,48 @@ app.post("/addBoy", (req, res) => {
 // make bet
 app.post("/makeBet", (req, res) => {
   async function main(pointID, better, bet) {
-    try {
-      // query for betterID
-      const ourBoy = await prisma.boy.findUniqueOrThrow({
-        where: {
-          name: better,
-        },
-        select: {
-          id: true,
-        },
-      });
+    // query for betterID
+    const ourBoy = await prisma.boy.findUniqueOrThrow({
+      where: {
+        name: better,
+      },
+      select: {
+        id: true,
+      },
+    });
 
-      // query for point
-      const thePoint = await prisma.point.findUniqueOrThrow({
-        where: {
-          id: pointID,
-        },
-        select: {
-          id: true,
-        },
-      });
+    // query for point
+    const thePoint = await prisma.point.findUniqueOrThrow({
+      where: {
+        id: pointID,
+      },
+      select: {
+        id: true,
+      },
+    });
 
-      // write bet
-      const theBet = await prisma.bet.upsert({
-        create: {
+    // write bet
+    const theBet = await prisma.bet.upsert({
+      create: {
+        betterID: ourBoy.id,
+        bet: bet,
+        pointID: thePoint.id,
+      },
+      update: {
+        bet: bet,
+      },
+      where: {
+        betterID_pointID: {
           betterID: ourBoy.id,
-          bet: bet,
           pointID: thePoint.id,
         },
-        update: {
-          bet: bet,
-        },
-        where: {
-          betterID_pointID: {
-            betterID: ourBoy.id,
-            pointID: thePoint.id,
-          },
-        },
-      });
+      },
+    });
 
-      if (theBet) {
-        res.status(200).send({ message: "success", bet: theBet });
-      } else {
-        res.status(400).send({ message: "failure" });
-      }
-      // error handling
-    } catch (e) {
-      if (e instanceof Prisma.PrismaClientKnownRequestError) {
-        if (e.code === "P2025") {
-          res.status(400).send({ message: "Invalid better or point" });
-        } else {
-          res.status(400).send(JSON.stringify(e));
-        }
-      }
-      throw e;
+    if (theBet) {
+      res.status(200).send({ message: "success", bet: theBet });
+    } else {
+      res.status(400).send({ message: "failure" });
     }
   }
 
@@ -242,9 +230,18 @@ app.post("/makeBet", (req, res) => {
         await prisma.$disconnect();
       })
       .catch(async (e) => {
-        console.error(e);
         await prisma.$disconnect();
-        process.exit(1);
+        if (e instanceof Prisma.PrismaClientKnownRequestError) {
+          if (e.code === "P2025") {
+            res.status(400).send({ message: "Invalid better or point", error: e });
+          } else {
+            res.status(400).send({ error: e });
+          }
+        } else {
+          console.error(e);
+          throw e;
+          process.exit(1);
+        }
       });
   }
 });
