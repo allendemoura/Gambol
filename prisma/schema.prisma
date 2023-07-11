@@ -9,11 +9,12 @@ datasource db {
 }
 
 model Boy {
-  id     Int     @id @default(autoincrement())
-  name   String  @unique
-  role   Age
-  points Point[]
-  bets   Bet[]
+  id      Int     @id @default(autoincrement())
+  name    String  @unique
+  role    Age
+  points  Point[]
+  bets    Bet[]
+  balance Int     @default(0)
 }
 
 enum Age {
@@ -21,25 +22,32 @@ enum Age {
   SHIPLET
 }
 
+enum Result {
+  PENDING
+  UNDER
+  OVER
+}
+
 model Point {
-  id    Int    @id @default(autoincrement())
-  boy   Boy    @relation(fields: [boyID], references: [id])
-  boyID Int
-  desc  String
-  point Int
-  bets  Bet[]
+  id     Int    @id @default(autoincrement())
+  boy    Boy    @relation(fields: [boyID], references: [id])
+  boyID  Int
+  desc   String
+  point  Int
+  bets   Bet[]
+  result Result @default(PENDING)
 
   @@unique([boyID, desc])
   @@index([boyID])
 }
 
 model Bet {
-  id       Int     @id @default(autoincrement())
-  point    Point   @relation(fields: [pointID], references: [id])
+  id       Int    @id @default(autoincrement())
+  point    Point  @relation(fields: [pointID], references: [id])
   pointID  Int
-  better   Boy     @relation(fields: [betterID], references: [id])
+  better   Boy    @relation(fields: [betterID], references: [id])
   betterID Int
-  bet      Boolean
+  bet      Result
 
   @@unique([betterID, pointID])
   @@index([pointID])
