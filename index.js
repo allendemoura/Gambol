@@ -257,15 +257,25 @@ app.get("/bets", (req, res) => {
 // make bet
 app.post("/bets", (req, res) => {
   async function main(poolID, better, bet, amount) {
-    // query for betterID
+    // query for better's info
     const theUser = await prisma.user.findUniqueOrThrow({
       where: {
         name: better,
       },
       select: {
         id: true,
+        balance: true,
       },
     });
+
+    // check if better has enough in balance to make the bet
+    if (theUser.balance < amount) {
+      res.status(400).send({
+        message: "better does not have enough in their balance to make this bet",
+        currentBalance: theUser.balance,
+      });
+      return;
+    }
 
     // query for pool
     const thePool = await prisma.pool.findUniqueOrThrow({
@@ -361,7 +371,11 @@ app.post("/bets", (req, res) => {
     }
 
     if (newBet) {
-      res.status(200).send({ message: "success", bet: theBet });
+      res.status(200).send({
+        message: "success. note that if this bet already existed, the new bet amount will be added to it.",
+        oldBet: theBet,
+        currentBet: newBet,
+      });
     } else {
       res.status(400).send({ message: "failure" });
     }
