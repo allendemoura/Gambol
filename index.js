@@ -9,12 +9,12 @@ app.use(express.json());
 const { PrismaClient, Prisma } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-// return all boys
-app.get("/boys", (req, res) => {
+// return all users
+app.get("/users", (req, res) => {
   // db query func
   async function main() {
-    const allBoys = await prisma.boy.findMany();
-    res.status(200).send(allBoys);
+    const allUsers = await prisma.user.findMany();
+    res.status(200).send(allUsers);
   }
 
   main()
@@ -29,62 +29,12 @@ app.get("/boys", (req, res) => {
     });
 });
 
-// return all points on a boy
-app.get("/boys/:id/points", (req, res) => {
+// return all bets made by a user
+app.get("/users/:id/bets", (req, res) => {
   // db query func
   async function main(id) {
-    // query for boy
-    const ourBoy = await prisma.boy.findUniqueOrThrow({
-      where: {
-        id: id,
-      },
-    });
-
-    // query for points
-    const points = await prisma.point.findMany({
-      where: {
-        boyID: id,
-      },
-      select: {
-        id: true,
-        desc: true,
-        point: true,
-        result: true,
-      },
-    });
-    res.status(200).send(points);
-  }
-
-  // unpack req
-  const { id } = req.params;
-  main(parseInt(id))
-    .then(async () => {
-      await prisma.$disconnect();
-    })
-    .catch(async (e) => {
-      await prisma.$disconnect();
-      if (e instanceof Prisma.PrismaClientKnownRequestError) {
-        if (e.code === "P2025") {
-          res.status(404).send({ message: "boy not found" });
-        } else {
-          res.status(500).send({ error: e });
-        }
-      } else {
-        console.error(e);
-        process.exit(1);
-      }
-    });
-});
-
-// return all active points on a boy
-// TODO
-
-// return all bets made by a boy
-app.get("/boys/:id/bets", (req, res) => {
-  // db query func
-  async function main(id) {
-    // query for boy
-    const ourBoy = await prisma.boy.findUniqueOrThrow({
+    // query for user
+    const user = await prisma.user.findUniqueOrThrow({
       where: {
         id: id,
       },
@@ -96,8 +46,9 @@ app.get("/boys/:id/bets", (req, res) => {
       },
       select: {
         id: true,
-        pointID: true,
+        poolID: true,
         bet: true,
+        amount: true,
       },
     });
     res.status(200).send(bets);
@@ -113,7 +64,7 @@ app.get("/boys/:id/bets", (req, res) => {
       await prisma.$disconnect();
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === "P2025") {
-          res.status(404).send({ message: "boy not found" });
+          res.status(404).send({ message: "user not found" });
         } else {
           res.status(500).send({ error: e });
         }
@@ -124,58 +75,59 @@ app.get("/boys/:id/bets", (req, res) => {
     });
 });
 
-// add boy
-app.post("/boys", (req, res) => {
+// add user
+app.post("/users", (req, res) => {
   // db create row
-  async function main(name, role) {
-    const boy = await prisma.boy.upsert({
-      create: {
-        name: name,
-        role: role,
-      },
-      update: {
-        role: role,
-      },
-      where: {
+  async function main(name) {
+    // create user
+    const user = await prisma.user.create({
+      data: {
         name: name,
       },
     });
-    if (boy) {
-      res.status(200).send({ message: "success", boy });
+
+    if (user) {
+      res.status(200).send({ message: "success", user });
     } else {
       res.status(400).send({ message: "failure" });
     }
   }
 
   // unpack req
-  const { name, role } = req.body;
+  const { name } = req.body;
 
   // check req validity
-  if (!name || !role) {
-    res.status(400).send({ message: "request must include: name, role" });
-  } else if (role != "MAN" && role != "SHIPLET") {
-    res.status(400).send({ message: "role must be one of these strings: 'MAN', 'SHIPLET'" });
+  if (!name) {
+    res.status(400).send({ message: "request must include: name" });
   } else {
     // send response
-    main(name, role)
+    main(name)
       // prisma db connection termination
       .then(async () => {
         await prisma.$disconnect();
       })
       .catch(async (e) => {
-        console.error(e);
         await prisma.$disconnect();
-        process.exit(1);
+        if (e instanceof Prisma.PrismaClientKnownRequestError) {
+          if (e.code === "P2002") {
+            res.status(409).send({ message: "user already exists" });
+          } else {
+            res.status(500).send({ error: e });
+          }
+        } else {
+          console.error(e);
+          process.exit(1);
+        }
       });
   }
 });
 
-// return all points
-app.get("/points", (req, res) => {
+// return all pools
+app.get("/pools", (req, res) => {
   // db query func
   async function main() {
-    const allPoints = await prisma.point.findMany();
-    res.status(200).send(allPoints);
+    const allPools = await prisma.pool.findMany();
+    res.status(200).send(allPools);
   }
 
   main()
@@ -190,12 +142,12 @@ app.get("/points", (req, res) => {
     });
 });
 
-// return all bets on a point
-app.get("/points/:id/bets", (req, res) => {
+// return all bets on a pool
+app.get("/pools/:id/bets", (req, res) => {
   // db query func
   async function main(id) {
-    // query for point
-    const thePoint = await prisma.point.findUniqueOrThrow({
+    // check that pool exists
+    const thePool = await prisma.pool.findUniqueOrThrow({
       where: {
         id: id,
       },
@@ -203,12 +155,13 @@ app.get("/points/:id/bets", (req, res) => {
 
     const bets = await prisma.bet.findMany({
       where: {
-        pointID: id,
+        poolID: id,
       },
       select: {
         id: true,
         betterID: true,
         bet: true,
+        amount: true,
       },
     });
     res.status(200).send(bets);
@@ -224,7 +177,7 @@ app.get("/points/:id/bets", (req, res) => {
       await prisma.$disconnect();
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === "P2025") {
-          res.status(404).send({ message: "point not found" });
+          res.status(404).send({ message: "pool not found" });
         } else {
           res.status(500).send({ error: e });
         }
@@ -235,71 +188,48 @@ app.get("/points/:id/bets", (req, res) => {
     });
 });
 
-// add point
-app.post("/points", (req, res) => {
-  async function main(boy, desc, pointVal) {
-    // query for boyID
-    const ourBoy = await prisma.boy.findUniqueOrThrow({
-      where: {
-        name: boy,
-      },
-      select: {
-        id: true,
-      },
-    });
+// add pool
+app.post("/pools", (req, res) => {
+  async function main(desc, point) {
+    // TODO: check if pool already exists and reject if resolved already
 
-    // TODO: check if point already exists and reject if resolved already
-
-    // write point
-    const point = await prisma.point.upsert({
+    // write pool
+    const pool = await prisma.pool.upsert({
       create: {
-        boyID: ourBoy.id,
         desc: desc,
-        point: pointVal,
+        point: point,
       },
       update: {
-        point: pointVal,
+        point: point,
       },
       where: {
-        boyID_desc: {
-          boyID: ourBoy.id,
-          desc: desc,
-        },
+        desc: desc,
       },
     });
-    if (point) {
-      res.status(200).send({ message: "success", point });
+    if (pool) {
+      res.status(200).send({ message: "success", pool });
     } else {
       res.status(400).send({ message: "failure" });
     }
   }
 
   // unpack req
-  const { boy, desc, point } = req.body;
+  const { desc, point } = req.body;
 
   // check req validity
-  if (!boy || !desc || !point) {
-    res.status(400).send({ message: "request must include: boy, desc, point" });
+  if (!desc || !point) {
+    res.status(400).send({ message: "request must include: desc, point" });
   } else {
     // execute
-    main(boy, desc, point)
+    main(desc, point)
       // prisma db connection termination
       .then(async () => {
         await prisma.$disconnect();
       })
       .catch(async (e) => {
+        console.error(e);
         await prisma.$disconnect();
-        if (e instanceof Prisma.PrismaClientKnownRequestError) {
-          if (e.code === "P2025") {
-            res.status(400).send({ message: "Boy not found" });
-          } else {
-            res.status(400).send(JSON.stringify(e));
-          }
-        } else {
-          console.error(e);
-          throw e;
-          process.exit(1);
-        }
+        process.exit(1);
       });
   }
 });
@@ -326,9 +256,9 @@ app.get("/bets", (req, res) => {
 
 // make bet
 app.post("/bets", (req, res) => {
-  async function main(pointID, better, bet) {
+  async function main(poolID, better, bet, amount) {
     // query for betterID
-    const ourBoy = await prisma.boy.findUniqueOrThrow({
+    const theUser = await prisma.user.findUniqueOrThrow({
       where: {
         name: better,
       },
@@ -337,10 +267,10 @@ app.post("/bets", (req, res) => {
       },
     });
 
-    // query for point
-    const thePoint = await prisma.point.findUniqueOrThrow({
+    // query for pool
+    const thePool = await prisma.pool.findUniqueOrThrow({
       where: {
-        id: pointID,
+        id: poolID,
       },
       select: {
         id: true,
@@ -348,31 +278,89 @@ app.post("/bets", (req, res) => {
       },
     });
 
-    // check if the point has been resolved
-    if (thePoint.result !== "PENDING") {
-      res.status(400).send({ message: "point has been resolved and so betting is closed" });
+    // check if the pool has been resolved
+    if (thePool.result !== "PENDING") {
+      res.status(400).send({ message: "pool has been resolved and so betting is closed" });
       return;
     }
 
-    // write bet
-    const theBet = await prisma.bet.upsert({
-      create: {
-        betterID: ourBoy.id,
-        bet: bet,
-        pointID: thePoint.id,
-      },
-      update: {
-        bet: bet,
-      },
+    // check if bet exists
+    const theBet = await prisma.bet.findUnique({
       where: {
-        betterID_pointID: {
-          betterID: ourBoy.id,
-          pointID: thePoint.id,
+        betterID_poolID: {
+          betterID: theUser.id,
+          poolID: thePool.id,
         },
       },
     });
 
-    if (theBet) {
+    // if bet conflicts, reject
+    if (theBet && theBet.bet && theBet.bet !== bet) {
+      res.status(400).send({ message: "better already has a bet on the other side of this pool", theBet });
+      return;
+    }
+
+    // write bet
+    const newBet = await prisma.bet.upsert({
+      create: {
+        betterID: theUser.id,
+        bet: bet,
+        poolID: thePool.id,
+        amount: amount,
+      },
+      update: {
+        amount: {
+          increment: amount,
+        },
+      },
+      where: {
+        betterID_poolID: {
+          betterID: theUser.id,
+          poolID: thePool.id,
+        },
+      },
+    });
+
+    // subtract from user balance
+    const updatedUser = await prisma.user.update({
+      where: {
+        id: theUser.id,
+      },
+      data: {
+        balance: {
+          decrement: amount,
+        },
+      },
+    });
+
+    // add amount to pool
+
+    // check if over or under
+    if (bet === "OVER") {
+      const updatedPool = await prisma.pool.update({
+        where: {
+          id: thePool.id,
+        },
+        data: {
+          overPool: {
+            increment: amount,
+          },
+        },
+      });
+    } else if (bet === "UNDER") {
+      const updatedPool = await prisma.pool.update({
+        where: {
+          id: thePool.id,
+        },
+        data: {
+          underPool: {
+            increment: amount,
+          },
+        },
+      });
+    }
+
+    if (newBet) {
       res.status(200).send({ message: "success", bet: theBet });
     } else {
       res.status(400).send({ message: "failure" });
@@ -380,16 +368,18 @@ app.post("/bets", (req, res) => {
   }
 
   // unpack req
-  const { pointID, better, bet } = req.body;
+  const { poolID, better, bet, amount } = req.body;
 
   // check req validity
-  if (!pointID || !better || !bet) {
-    res.status(400).send({ message: "request must include: pointID, better name, bet" });
+  if (!poolID || !better || !bet || !amount) {
+    res.status(400).send({ message: "request must include: poolID, better name, bet, amount" });
   } else if (bet !== "OVER" && bet !== "UNDER") {
     res.status(400).send({ message: "bet must be 'OVER' or 'UNDER'" });
+  } else if (amount <= 0) {
+    res.status(400).send({ message: "amount must be positive int" });
   } else {
     // execute
-    main(pointID, better, bet)
+    main(poolID, better, bet, amount)
       // prisma db connection termination
       .then(async () => {
         await prisma.$disconnect();
@@ -398,7 +388,7 @@ app.post("/bets", (req, res) => {
         await prisma.$disconnect();
         if (e instanceof Prisma.PrismaClientKnownRequestError) {
           if (e.code === "P2025") {
-            res.status(400).send({ message: "Invalid better or point", error: e });
+            res.status(400).send({ message: "Invalid better or pool", error: e });
           } else {
             res.status(400).send({ error: e });
           }
@@ -411,23 +401,24 @@ app.post("/bets", (req, res) => {
   }
 });
 
-// resolve point
-app.post("/points/:id/resolve", (req, res) => {
+// resolve pool
+app.post("/pools/:id/resolve", (req, res) => {
   async function main(id, result) {
-    // query for point
-    const thePoint = await prisma.point.findUniqueOrThrow({
+    // query for pool
+    const thePool = await prisma.pool.findUniqueOrThrow({
       where: {
         id: id,
       },
     });
 
-    if (thePoint.result !== "PENDING") {
-      res.status(400).send({ message: "point has already been resolved" });
+    // check if the pool has been resolved already
+    if (thePool.result !== "PENDING") {
+      res.status(400).send({ message: "pool has already been resolved" });
       return;
     }
 
-    // update point
-    const updatedPoint = await prisma.point.update({
+    // update pool
+    const updatedPool = await prisma.pool.update({
       where: {
         id: id,
       },
@@ -436,39 +427,30 @@ app.post("/points/:id/resolve", (req, res) => {
       },
     });
 
-    // // query for winners
-    // const winners = await prisma.bet.findMany({
-    //   where: {
-    //     pointID: id,
-    //     bet: result,
-    //   },
-    //   select: {
-    //     betterID: true,
-    //   },
-    // });
-
-    // // pay out winners with loop
-    // winners.forEach(async (winner) => {
-    //   await prisma.boy.update({
-    //     where: {
-    //       id: winner.betterID,
-    //     },
-    //     data: {
-    //       balance: {
-    //         increment: 1,
-    //       },
-    //     },
-    //   });
-    // });
+    // determine losing result and payout amount
+    let losingResult;
+    let payout;
+    let winnerPool;
+    if (updatedPool.result === "OVER") {
+      losingResult = "UNDER";
+      payout = updatedPool.underPool;
+      winnerPool = updatedPool.overPool;
+    } else if (updatedPool.result === "UNDER") {
+      losingResult = "OVER";
+      payout = updatedPool.overPool;
+      winnerPool = updatedPool.underPool;
+    }
 
     // pay out winners
-    const winners = await prisma.boy.updateMany({
+
+    // query for winners and select their winning bets
+    const winners = await prisma.user.findMany({
       where: {
         bets: {
           some: {
             AND: [
               {
-                pointID: id,
+                poolID: id,
               },
               {
                 bet: result,
@@ -477,22 +459,49 @@ app.post("/points/:id/resolve", (req, res) => {
           },
         },
       },
-      data: {
-        balance: {
-          increment: 1,
+      select: {
+        id: true,
+        bets: {
+          where: {
+            AND: [
+              {
+                poolID: id,
+              },
+              {
+                bet: result,
+              },
+            ],
+          },
         },
       },
     });
 
-    res.status(200).send({ message: "success", updatedPoint, winners });
+    for (const winner of winners) {
+      // calculate winnings proportionate to bet
+      const winnings = Math.floor((winner.bets[0].amount / winnerPool) * payout);
+
+      await prisma.user.update({
+        where: {
+          id: winner.id,
+        },
+        data: {
+          balance: {
+            increment: winnings + winner.bets[0].amount,
+          },
+        },
+      });
+    }
+
+    res.status(200).send({ message: "success", updatedPool, winners });
   }
 
   // unpack req
-  const { id, result } = req.body;
+  const { result } = req.body;
+  const { id } = req.params;
 
   // validate req
   if (!id || result === undefined) {
-    res.status(400).send({ message: "request must include: pointID, result" });
+    res.status(400).send({ message: "request must include: result" });
   } else if (result !== "OVER" && result !== "UNDER") {
     res.status(400).send({ message: "result must be one of these strings: 'OVER', 'UNDER'" });
   } else {
@@ -506,7 +515,7 @@ app.post("/points/:id/resolve", (req, res) => {
         await prisma.$disconnect();
         if (e instanceof Prisma.PrismaClientKnownRequestError) {
           if (e.code === "P2025") {
-            res.status(400).send({ message: "Invalid point", error: e });
+            res.status(400).send({ message: "Invalid pool", error: e });
           } else {
             res.status(400).send({ error: e });
           }

@@ -8,18 +8,11 @@ datasource db {
   relationMode = "prisma"
 }
 
-model Boy {
-  id      Int     @id @default(autoincrement())
-  name    String  @unique
-  role    Age
-  points  Point[]
+model User {
+  id      Int    @id @default(autoincrement())
+  name    String @unique
   bets    Bet[]
-  balance Int     @default(0)
-}
-
-enum Age {
-  MAN
-  SHIPLET
+  balance Int    @default(50)
 }
 
 enum Result {
@@ -28,28 +21,26 @@ enum Result {
   OVER
 }
 
-model Point {
-  id     Int    @id @default(autoincrement())
-  boy    Boy    @relation(fields: [boyID], references: [id])
-  boyID  Int
-  desc   String
-  point  Int
-  bets   Bet[]
-  result Result @default(PENDING)
-
-  @@unique([boyID, desc])
-  @@index([boyID])
+model Pool {
+  id        Int     @id @default(autoincrement())
+  desc      String  @unique
+  point     Decimal
+  bets      Bet[]
+  underPool Int     @default(0)
+  overPool  Int     @default(0)
+  result    Result  @default(PENDING)
 }
 
 model Bet {
   id       Int    @id @default(autoincrement())
-  point    Point  @relation(fields: [pointID], references: [id])
-  pointID  Int
-  better   Boy    @relation(fields: [betterID], references: [id])
+  pool     Pool   @relation(fields: [poolID], references: [id])
+  poolID   Int
+  better   User   @relation(fields: [betterID], references: [id])
   betterID Int
   bet      Result
+  amount   Int
 
-  @@unique([betterID, pointID])
-  @@index([pointID])
+  @@unique([betterID, poolID])
+  @@index([poolID])
   @@index([betterID])
 }
