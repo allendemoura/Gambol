@@ -33,9 +33,9 @@ model Pool {
 
 model Bet {
   id       Int    @id @default(autoincrement())
-  pool     Pool   @relation(fields: [poolID], references: [id])
+  pool     Pool   @relation(fields: [poolID], references: [id], onDelete: Cascade)
   poolID   Int
-  better   User   @relation(fields: [betterID], references: [id])
+  better   User   @relation(fields: [betterID], references: [id], onDelete: Cascade)
   betterID Int
   bet      Result
   amount   Int
