@@ -43,6 +43,48 @@ app.get("/users", (req, res) => {
     });
 });
 
+// return a user by id
+app.get("/users/:id", (req, res) => {
+  // db query func
+  async function main(id) {
+    const user = await prisma.user.findUniqueOrThrow({
+      where: {
+        id: id,
+      },
+    });
+    res.status(200).send(user);
+  }
+
+  // unpack req
+  const { id } = req.params;
+
+  // validate req
+  // check if id is a number
+  if (isNaN(id)) {
+    res.status(400).send({ message: "id must be a number" });
+  } else {
+    // send response
+    main(parseInt(id))
+      // prisma db connection termination
+      .then(async () => {
+        await prisma.$disconnect();
+      })
+      .catch(async (e) => {
+        await prisma.$disconnect();
+        if (e instanceof Prisma.PrismaClientKnownRequestError) {
+          if (e.code === "P2025") {
+            res.status(404).send({ message: "user not found" });
+          } else {
+            res.status(400).send({ error: e });
+          }
+        } else {
+          console.error(e);
+          process.exit(1);
+        }
+      });
+  }
+});
+
 // return all bets made by a user
 app.get("/users/:id/bets", (req, res) => {
   // db query func
@@ -154,6 +196,65 @@ app.get("/pools", (req, res) => {
       await prisma.$disconnect();
       process.exit(1);
     });
+});
+
+// return a pool by id
+app.get("/pools/:id", (req, res) => {
+  // active pools query
+  async function active() {
+    const activePools = await prisma.pool.findMany({
+      where: {
+        result: "PENDING",
+      },
+    });
+    res.status(200).send(activePools);
+  }
+  // db query func
+  async function main(id) {
+    const pool = await prisma.pool.findUniqueOrThrow({
+      where: {
+        id: id,
+      },
+    });
+    res.status(200).send(pool);
+  }
+
+  // unpack req
+  const { id } = req.params;
+
+  // validate req
+  if (id === "active" || id === "open" || id === "pending") {
+    // return all active pools
+    active(parseInt(id))
+      .then(async () => {
+        await prisma.$disconnect();
+      })
+      .catch(async (e) => {
+        console.error(e);
+        await prisma.$disconnect();
+        process.exit(1);
+      });
+  } else if (isNaN(id)) {
+    res.status(400).send({ message: "id must be a number" });
+  } else {
+    main(parseInt(id))
+      .then(async () => {
+        await prisma.$disconnect();
+      })
+      .catch(async (e) => {
+        await prisma.$disconnect();
+        if (e instanceof Prisma.PrismaClientKnownRequestError) {
+          if (e.code === "P2025") {
+            res.status(404).send({ message: "pool not found" });
+          } else {
+            res.status(500).send({ error: e });
+          }
+        } else {
+          console.error(e);
+          process.exit(1);
+        }
+      });
+  }
 });
 
 // return all bets on a pool
