@@ -2,12 +2,26 @@ const express = require("express");
 const app = express();
 const PORT = 8080;
 
+const schedule = require("node-schedule");
+
 // json middleware
 app.use(express.json());
 
 // prisma init
 const { PrismaClient, Prisma } = require("@prisma/client");
 const prisma = new PrismaClient();
+
+// each hour anyone who has a balance of 0 will be brought up to 5
+const charity = schedule.scheduleJob("0 * * * *", async () => {
+  await prisma.user.updateMany({
+    where: {
+      balance: 0,
+    },
+    data: {
+      balance: 5,
+    },
+  });
+});
 
 // return all users
 app.get("/users", (req, res) => {
@@ -191,7 +205,24 @@ app.get("/pools/:id/bets", (req, res) => {
 // add pool
 app.post("/pools", (req, res) => {
   async function main(desc, point) {
-    // TODO: check if pool already exists and reject if resolved already
+    // check if pool already exists
+    const oldPool = await prisma.pool.findUnique({
+      where: {
+        desc: desc,
+      },
+    });
+
+    // reject point change if pool has been resolved
+    if (oldPool && oldPool.result !== "PENDING") {
+      res.status(409).send({ message: "pool exists and has already been resolved" });
+      return;
+    }
+
+    // reject point change if pool has bets on it
+    if (oldPool && oldPool.overPool + oldPool.underPool > 0) {
+      res.status(409).send({ message: "cannot change the point on a pool that has already been bet on" });
+      return;
+    }
 
     // write pool
     const pool = await prisma.pool.upsert({
