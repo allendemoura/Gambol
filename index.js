@@ -317,17 +317,14 @@ app.post("/pools", (req, res) => {
 
     // reject point change if pool has been resolved
     if (oldPool && oldPool.result !== "PENDING") {
-      res
-        .status(409)
-        .send({ message: "pool exists and has already been resolved" });
+      res.status(409).send({ message: "pool exists and has already been resolved" });
       return;
     }
 
     // reject point change if pool has bets on it
     if (oldPool && oldPool.overPool + oldPool.underPool > 0) {
       res.status(409).send({
-        message:
-          "cannot change the point on a pool that has already been bet on",
+        message: "cannot change the point on a pool that has already been bet on",
       });
       return;
     }
@@ -410,8 +407,7 @@ app.post("/bets", (req, res) => {
     // check if better has enough in balance to make the bet
     if (theUser.balance < amount) {
       res.status(400).send({
-        message:
-          "better does not have enough in their balance to make this bet",
+        message: "better does not have enough in their balance to make this bet",
         currentBalance: theUser.balance,
       });
       return;
@@ -430,9 +426,7 @@ app.post("/bets", (req, res) => {
 
     // check if the pool has been resolved
     if (thePool.result !== "PENDING") {
-      res
-        .status(400)
-        .send({ message: "pool has been resolved and so betting is closed" });
+      res.status(400).send({ message: "pool has been resolved and so betting is closed" });
       return;
     }
 
@@ -517,8 +511,7 @@ app.post("/bets", (req, res) => {
 
     if (newBet) {
       res.status(200).send({
-        message:
-          "success. note that if this bet already existed, the new bet amount will be added to it.",
+        message: "success. note that if this bet already existed, the new bet amount will be added to it.",
         oldBet: theBet,
         currentBet: newBet,
       });
@@ -529,8 +522,6 @@ app.post("/bets", (req, res) => {
 
   // unpack req
   const { poolID, better, bet, amount } = req.body;
-
-  console.log(poolID, better, bet, amount);
 
   // check req validity
   if (!poolID || !better || !bet || !amount) {
@@ -552,9 +543,7 @@ app.post("/bets", (req, res) => {
         await prisma.$disconnect();
         if (e instanceof Prisma.PrismaClientKnownRequestError) {
           if (e.code === "P2025") {
-            res
-              .status(400)
-              .send({ message: "Invalid better or pool", error: e });
+            res.status(400).send({ message: "Invalid better or pool", error: e });
           } else {
             res.status(400).send({ error: e });
           }
@@ -644,9 +633,7 @@ app.post("/pools/:id/resolve", (req, res) => {
 
     for (const winner of winners) {
       // calculate winnings proportionate to bet
-      const winnings = Math.floor(
-        (winner.bets[0].amount / winnerPool) * payout
-      );
+      const winnings = Math.floor((winner.bets[0].amount / winnerPool) * payout);
 
       await prisma.user.update({
         where: {
