@@ -9,6 +9,8 @@ const schedule = require("node-schedule");
 app.use(express.json());
 app.use(cors());
 
+// thank you
+
 // prisma init
 const { PrismaClient, Prisma } = require("@prisma/client");
 const prisma = new PrismaClient();
