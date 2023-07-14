@@ -114,23 +114,27 @@ app.get("/users/:id/bets", (req, res) => {
 
   // unpack req
   const { id } = req.params;
-  main(parseInt(id))
-    .then(async () => {
-      await prisma.$disconnect();
-    })
-    .catch(async (e) => {
-      await prisma.$disconnect();
-      if (e instanceof Prisma.PrismaClientKnownRequestError) {
-        if (e.code === "P2025") {
-          res.status(404).send({ message: "user not found" });
+  if (isNaN(id)) {
+    res.status(400).send({ message: "id must be a number" });
+  } else {
+    main(parseInt(id))
+      .then(async () => {
+        await prisma.$disconnect();
+      })
+      .catch(async (e) => {
+        await prisma.$disconnect();
+        if (e instanceof Prisma.PrismaClientKnownRequestError) {
+          if (e.code === "P2025") {
+            res.status(404).send({ message: "user not found" });
+          } else {
+            res.status(500).send({ error: e });
+          }
         } else {
-          res.status(500).send({ error: e });
+          console.error(e);
+          process.exit(1);
         }
-      } else {
-        console.error(e);
-        process.exit(1);
-      }
-    });
+      });
+  }
 });
 
 // add user
@@ -286,23 +290,27 @@ app.get("/pools/:id/bets", (req, res) => {
 
   // unpack req
   const { id } = req.params;
-  main(parseInt(id))
-    .then(async () => {
-      await prisma.$disconnect();
-    })
-    .catch(async (e) => {
-      await prisma.$disconnect();
-      if (e instanceof Prisma.PrismaClientKnownRequestError) {
-        if (e.code === "P2025") {
-          res.status(404).send({ message: "pool not found" });
+  if (isNaN(id)) {
+    res.status(400).send({ message: "id must be a number" });
+  } else {
+    main(parseInt(id))
+      .then(async () => {
+        await prisma.$disconnect();
+      })
+      .catch(async (e) => {
+        await prisma.$disconnect();
+        if (e instanceof Prisma.PrismaClientKnownRequestError) {
+          if (e.code === "P2025") {
+            res.status(404).send({ message: "pool not found" });
+          } else {
+            res.status(500).send({ error: e });
+          }
         } else {
-          res.status(500).send({ error: e });
+          console.error(e);
+          process.exit(1);
         }
-      } else {
-        console.error(e);
-        process.exit(1);
-      }
-    });
+      });
+  }
 });
 
 // add pool
@@ -583,7 +591,6 @@ app.post("/pools/:id/resolve", (req, res) => {
     });
 
     // determine losing result and payout amount
-    let losingResult;
     let payout;
     let winnerPool;
     if (updatedPool.result === "OVER") {
@@ -661,6 +668,8 @@ app.post("/pools/:id/resolve", (req, res) => {
     res.status(400).send({
       message: "result must be one of these strings: 'OVER', 'UNDER'",
     });
+  } else if (isNaN(id)) {
+    res.status(400).send({ message: "id must be a number" });
   } else {
     // execute
     main(parseInt(id), result)
