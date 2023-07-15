@@ -230,6 +230,64 @@ app.post("/users", (req, res) => {
   }
 });
 
+// delete user
+app.post("/users/delete", (req, res) => {
+  // db create row
+  async function main(hash) {
+    // create user
+    const user = await prisma.user.delete({
+      where: {
+        hash: hash,
+      },
+    });
+
+    if (user) {
+      res.status(200).send({ message: "success", user });
+    } else {
+      res.status(400).send({ message: "failure" });
+    }
+  }
+
+  const clerkExample = {
+    data: {
+      deleted: true,
+      id: "user_29wBMCtzATuFJut8jO2VNTVekS4",
+      object: "user",
+    },
+    object: "event",
+    type: "user.deleted",
+  };
+  // unpack req
+  const { deleted, id } = req.body.data;
+
+  // check req validity
+  if (!deleted) {
+    res.status(500).send({ message: "ERROR! USER NOT DELETED" });
+  } else if (!id) {
+    res.status(400).send({ message: "request must include: id" });
+  } else {
+    // send response
+    main(id)
+      // prisma db connection termination
+      .then(async () => {
+        await prisma.$disconnect();
+      })
+      .catch(async (e) => {
+        await prisma.$disconnect();
+        if (e instanceof Prisma.PrismaClientKnownRequestError) {
+          if (e.code === "P2002") {
+            res.status(409).send({ message: "user already exists" });
+          } else {
+            res.status(500).send({ error: e });
+          }
+        } else {
+          console.error(e);
+          process.exit(1);
+        }
+      });
+  }
+});
+
 // return all pools
 app.get("/pools", (req, res) => {
   // db query func
