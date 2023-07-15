@@ -10,7 +10,8 @@ datasource db {
 
 model User {
   id      Int    @id @default(autoincrement())
-  name    String @unique
+  hash    String @unique
+  name    String
   bets    Bet[]
   balance Int    @default(50)
 }

@@ -1,15 +1,15 @@
+const pkg = require("@clerk/clerk-sdk-node");
+const clerk = pkg.default;
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const app = express();
-const PORT = 8080;
-
+const PORT = process.env.PORT || 8080;
 const schedule = require("node-schedule");
 
 // json middleware
 app.use(express.json());
 app.use(cors());
-
-// thank you
 
 // prisma init
 const { PrismaClient, Prisma } = require("@prisma/client");
@@ -142,10 +142,11 @@ app.get("/users/:id/bets", (req, res) => {
 // add user
 app.post("/users", (req, res) => {
   // db create row
-  async function main(name) {
+  async function main(hash, name) {
     // create user
     const user = await prisma.user.create({
       data: {
+        hash: hash,
         name: name,
       },
     });
@@ -157,15 +158,58 @@ app.post("/users", (req, res) => {
     }
   }
 
+  const clerkExample = {
+    data: {
+      birthday: "",
+      created_at: 1654012591514,
+      email_addresses: [
+        {
+          email_address: "example@example.org",
+          id: "idn_29w83yL7CwVlJXylYLxcslromF1",
+          linked_to: [],
+          object: "email_address",
+          verification: {
+            status: "verified",
+            strategy: "ticket",
+          },
+        },
+      ],
+      external_accounts: [],
+      external_id: "567772",
+      first_name: "Example",
+      gender: "",
+      id: "user_29w83sxmDNGwOuEthce5gg56FcC",
+      image_url: "https://img.clerk.com/xxxxxx",
+      last_name: "Example",
+      last_sign_in_at: 1654012591514,
+      object: "user",
+      password_enabled: true,
+      phone_numbers: [],
+      primary_email_address_id: "idn_29w83yL7CwVlJXylYLxcslromF1",
+      primary_phone_number_id: null,
+      primary_web3_wallet_id: null,
+      private_metadata: {},
+      profile_image_url: "https://www.gravatar.com/avatar?d=mp",
+      public_metadata: {},
+      two_factor_enabled: false,
+      unsafe_metadata: {},
+      updated_at: 1654012591835,
+      username: null,
+      web3_wallets: [],
+    },
+    object: "event",
+    type: "user.created",
+  };
+
   // unpack req
-  const { name } = req.body;
+  const { first_name, id } = req.body.data;
 
   // check req validity
-  if (!name) {
-    res.status(400).send({ message: "request must include: name" });
+  if (!first_name || !id) {
+    res.status(400).send({ message: "request must include: name and id" });
   } else {
     // send response
-    main(name)
+    main(id, first_name)
       // prisma db connection termination
       .then(async () => {
         await prisma.$disconnect();
