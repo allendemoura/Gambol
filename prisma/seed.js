@@ -45,18 +45,26 @@ async function main() {
       {
         desc: "Years until UFOs proven real",
         point: 10.5,
+        underPool: 10,
+        overPool: 18,
       },
       {
         desc: "Dollars in PT's average poker pot",
         point: 100.5,
+        underPool: 10,
+        overPool: 18,
       },
       {
         desc: "Years until the world ends",
         point: 1000.5,
+        underPool: 10,
+        overPool: 18,
       },
       {
         desc: "Dollar amount of Saf's first Texas settlement",
         point: 10000.5,
+        underPool: 10,
+        overPool: 18,
       },
     ],
   });
