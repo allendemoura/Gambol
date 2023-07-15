@@ -50,10 +50,10 @@ app.get("/users", (req, res) => {
 // return a user by id
 app.get("/users/:id", (req, res) => {
   // db query func
-  async function main(id) {
+  async function main(hash) {
     const user = await prisma.user.findUniqueOrThrow({
       where: {
-        id: id,
+        hash: hash,
       },
     });
     res.status(200).send(user);
@@ -63,30 +63,24 @@ app.get("/users/:id", (req, res) => {
   const { id } = req.params;
 
   // validate req
-  // check if id is a number
-  if (isNaN(id)) {
-    res.status(400).send({ message: "id must be a number" });
-  } else {
-    // send response
-    main(parseInt(id))
-      // prisma db connection termination
-      .then(async () => {
-        await prisma.$disconnect();
-      })
-      .catch(async (e) => {
-        await prisma.$disconnect();
-        if (e instanceof Prisma.PrismaClientKnownRequestError) {
-          if (e.code === "P2025") {
-            res.status(404).send({ message: "user not found" });
-          } else {
-            res.status(400).send({ error: e });
-          }
+  main(parseInt(id))
+    // prisma db connection termination
+    .then(async () => {
+      await prisma.$disconnect();
+    })
+    .catch(async (e) => {
+      await prisma.$disconnect();
+      if (e instanceof Prisma.PrismaClientKnownRequestError) {
+        if (e.code === "P2025") {
+          res.status(404).send({ message: "user not found" });
         } else {
-          console.error(e);
-          process.exit(1);
+          res.status(400).send({ error: e });
         }
-      });
-  }
+      } else {
+        console.error(e);
+        process.exit(1);
+      }
+    });
 });
 
 // return all bets made by a user
