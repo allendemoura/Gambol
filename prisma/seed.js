@@ -1,0 +1,224 @@
+const { users } = require("@clerk/clerk-sdk-node");
+const { PrismaClient } = require("@prisma/client");
+const prisma = new PrismaClient();
+// use `prisma` in your application to read and write data in your DB
+
+async function main() {
+  const users = await prisma.user.createMany({
+    data: [
+      {
+        firstName: "Jimmy",
+        lastName: "Nelson",
+        hash: "1234",
+      },
+      {
+        firstName: "Bobby",
+        lastName: "Nelson",
+        hash: "2345",
+      },
+      {
+        firstName: "Timmy",
+        lastName: "Nelson",
+        hash: "3456",
+      },
+      {
+        firstName: "Tony",
+        lastName: "Nelson",
+        hash: "4567",
+      },
+      {
+        firstName: "Henrald",
+        lastName: "Nanciette",
+        hash: "5678",
+      },
+      {
+        firstName: "Gordon",
+        lastName: "Lightfoot",
+        hash: "6789",
+      },
+    ],
+  });
+  console.log("users created: ", users);
+
+  const pools = await prisma.pool.createMany({
+    data: [
+      {
+        desc: "Years until UFOs proven real",
+        point: 10.5,
+      },
+      {
+        desc: "Dollars in PT's average poker pot",
+        point: 100.5,
+      },
+      {
+        desc: "Years until the world ends",
+        point: 1000.5,
+      },
+      {
+        desc: "Dollar amount of Saf's first Texas settlement",
+        point: 10000.5,
+      },
+    ],
+  });
+  console.log("pools created: ", pools);
+
+  const bets = await prisma.bet.createMany({
+    data: [
+      {
+        betterID: 1,
+        bet: "OVER",
+        poolID: 1,
+        amount: 10,
+      },
+      {
+        betterID: 2,
+        bet: "UNDER",
+        poolID: 1,
+        amount: 5,
+      },
+      {
+        betterID: 3,
+        bet: "OVER",
+        poolID: 1,
+        amount: 7,
+      },
+      {
+        betterID: 4,
+        bet: "UNDER",
+        poolID: 1,
+        amount: 3,
+      },
+      {
+        betterID: 5,
+        bet: "OVER",
+        poolID: 1,
+        amount: 1,
+      },
+      {
+        betterID: 6,
+        bet: "UNDER",
+        poolID: 1,
+        amount: 2,
+      },
+      {
+        betterID: 1,
+        bet: "OVER",
+        poolID: 2,
+        amount: 10,
+      },
+      {
+        betterID: 2,
+        bet: "UNDER",
+        poolID: 2,
+        amount: 5,
+      },
+      {
+        betterID: 3,
+        bet: "OVER",
+        poolID: 2,
+        amount: 7,
+      },
+      {
+        betterID: 4,
+        bet: "UNDER",
+        poolID: 2,
+        amount: 3,
+      },
+      {
+        betterID: 5,
+        bet: "OVER",
+        poolID: 2,
+        amount: 1,
+      },
+      {
+        betterID: 6,
+        bet: "UNDER",
+        poolID: 2,
+        amount: 2,
+      },
+      {
+        betterID: 1,
+        bet: "OVER",
+        poolID: 3,
+        amount: 10,
+      },
+      {
+        betterID: 2,
+        bet: "UNDER",
+        poolID: 3,
+        amount: 5,
+      },
+      {
+        betterID: 3,
+        bet: "OVER",
+        poolID: 3,
+        amount: 7,
+      },
+      {
+        betterID: 4,
+        bet: "UNDER",
+        poolID: 3,
+        amount: 3,
+      },
+      {
+        betterID: 5,
+        bet: "OVER",
+        poolID: 3,
+        amount: 1,
+      },
+      {
+        betterID: 6,
+        bet: "UNDER",
+        poolID: 3,
+        amount: 2,
+      },
+      {
+        betterID: 1,
+        bet: "OVER",
+        poolID: 4,
+        amount: 10,
+      },
+      {
+        betterID: 2,
+        bet: "UNDER",
+        poolID: 4,
+        amount: 5,
+      },
+      {
+        betterID: 3,
+        bet: "OVER",
+        poolID: 4,
+        amount: 7,
+      },
+      {
+        betterID: 4,
+        bet: "UNDER",
+        poolID: 4,
+        amount: 3,
+      },
+      {
+        betterID: 5,
+        bet: "OVER",
+        poolID: 4,
+        amount: 1,
+      },
+      {
+        betterID: 6,
+        bet: "UNDER",
+        poolID: 4,
+        amount: 2,
+      },
+    ],
+  });
+  console.log("bets created: ", bets);
+}
+
+main()
+  .then(async () => {
+    await prisma.$disconnect();
+  })
+  .catch(async (e) => {
+    console.error(e);
+    await prisma.$disconnect();
+    process.exit(1);
+  });

@@ -142,12 +142,20 @@ app.get("/users/:id/bets", (req, res) => {
 // add user
 app.post("/users", (req, res) => {
   // db create row
-  async function main(hash, name) {
+  async function main(hash, firstName, lastName) {
     // create user
-    const user = await prisma.user.create({
-      data: {
+    const user = await prisma.user.upsert({
+      create: {
         hash: hash,
-        name: name,
+        firstName: firstName,
+        lastName: lastName,
+      },
+      update: {
+        firstName: firstName,
+        lastName: lastName,
+      },
+      where: {
+        hash: hash,
       },
     });
 
@@ -202,14 +210,14 @@ app.post("/users", (req, res) => {
   };
 
   // unpack req
-  const { first_name, id } = req.body.data;
+  const { first_name, last_name, id } = req.body.data;
 
   // check req validity
-  if (!first_name || !id) {
-    res.status(400).send({ message: "request must include: name and id" });
+  if (!first_name || !last_name || !id) {
+    res.status(400).send({ message: "request must include: first_name, last_name, and id" });
   } else {
     // send response
-    main(id, first_name)
+    main(id, first_name, last_name)
       // prisma db connection termination
       .then(async () => {
         await prisma.$disconnect();

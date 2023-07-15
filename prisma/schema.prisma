@@ -9,11 +9,12 @@ datasource db {
 }
 
 model User {
-  id      Int    @id @default(autoincrement())
-  hash    String @unique
-  name    String
-  bets    Bet[]
-  balance Int    @default(50)
+  id        Int    @id @default(autoincrement())
+  hash      String @unique
+  firstName String
+  lastName  String
+  bets      Bet[]
+  balance   Int    @default(50)
 }
 
 enum Result {
