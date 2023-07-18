@@ -9,8 +9,7 @@ datasource db {
 }
 
 model User {
-  id        Int    @id @default(autoincrement())
-  hash      String @unique
+  id        String @id
   firstName String
   lastName  String
   bets      Bet[]
@@ -38,7 +37,7 @@ model Bet {
   pool     Pool   @relation(fields: [poolID], references: [id], onDelete: Cascade)
   poolID   Int
   better   User   @relation(fields: [betterID], references: [id], onDelete: Cascade)
-  betterID Int
+  betterID String
   bet      Result
   amount   Int
 

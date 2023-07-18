@@ -50,10 +50,10 @@ app.get("/users", (req, res) => {
 // return a user by id
 app.get("/users/:id", (req, res) => {
   // db query func
-  async function main(hash) {
+  async function main(id) {
     const user = await prisma.user.findUniqueOrThrow({
       where: {
-        hash: hash,
+        id: id,
       },
     });
     res.status(200).send(user);
@@ -62,25 +62,29 @@ app.get("/users/:id", (req, res) => {
   // unpack req
   const { id } = req.params;
 
-  // validate req
-  main(parseInt(id))
-    // prisma db connection termination
-    .then(async () => {
-      await prisma.$disconnect();
-    })
-    .catch(async (e) => {
-      await prisma.$disconnect();
-      if (e instanceof Prisma.PrismaClientKnownRequestError) {
-        if (e.code === "P2025") {
-          res.status(404).send({ message: "user not found" });
+  // check if id is a string
+  if (typeof id !== "string") {
+    res.status(400).send({ message: "id must be a string" });
+  } else {
+    main(id)
+      // prisma db connection termination
+      .then(async () => {
+        await prisma.$disconnect();
+      })
+      .catch(async (e) => {
+        await prisma.$disconnect();
+        if (e instanceof Prisma.PrismaClientKnownRequestError) {
+          if (e.code === "P2025") {
+            res.status(404).send({ message: "user not found" });
+          } else {
+            res.status(400).send({ error: e });
+          }
         } else {
-          res.status(400).send({ error: e });
+          console.error(e);
+          process.exit(1);
         }
-      } else {
-        console.error(e);
-        process.exit(1);
-      }
-    });
+      });
+  }
 });
 
 // return all bets made by a user
@@ -110,10 +114,10 @@ app.get("/users/:id/bets", (req, res) => {
 
   // unpack req
   const { id } = req.params;
-  if (isNaN(id)) {
-    res.status(400).send({ message: "id must be a number" });
+  if (typeof id !== "string") {
+    res.status(400).send({ message: "id must be a string" });
   } else {
-    main(parseInt(id))
+    main(id)
       .then(async () => {
         await prisma.$disconnect();
       })
@@ -136,11 +140,11 @@ app.get("/users/:id/bets", (req, res) => {
 // add user
 app.post("/users", (req, res) => {
   // db create row
-  async function main(hash, firstName, lastName) {
+  async function main(id, firstName, lastName) {
     // create user
     const user = await prisma.user.upsert({
       create: {
-        hash: hash,
+        id: id,
         firstName: firstName,
         lastName: lastName,
       },
@@ -149,7 +153,7 @@ app.post("/users", (req, res) => {
         lastName: lastName,
       },
       where: {
-        hash: hash,
+        id: id,
       },
     });
 
@@ -203,6 +207,11 @@ app.post("/users", (req, res) => {
     type: "user.created",
   };
 
+  // pre validate req body
+  if (!req.body.data) {
+    res.status(400).send({ message: "request must include: data{}" });
+  }
+
   // unpack req
   const { first_name, last_name, id } = req.body.data;
 
@@ -235,11 +244,11 @@ app.post("/users", (req, res) => {
 // delete user
 app.post("/users/delete", (req, res) => {
   // db create row
-  async function main(hash) {
+  async function main(id) {
     // create user
     const user = await prisma.user.delete({
       where: {
-        hash: hash,
+        id: id,
       },
     });
 
@@ -506,11 +515,11 @@ app.get("/bets", (req, res) => {
 
 // make bet
 app.post("/bets", (req, res) => {
-  async function main(poolID, better, bet, amount) {
+  async function main(poolID, betterID, bet, amount) {
     // query for better's info
     const theUser = await prisma.user.findUniqueOrThrow({
       where: {
-        name: better,
+        id: betterID,
       },
       select: {
         id: true,
@@ -635,12 +644,12 @@ app.post("/bets", (req, res) => {
   }
 
   // unpack req
-  const { poolID, better, bet, amount } = req.body;
+  const { poolID, betterID, bet, amount } = req.body;
 
   // check req validity
-  if (!poolID || !better || !bet || !amount) {
+  if (!poolID || !betterID || !bet || !amount) {
     res.status(400).send({
-      message: "request must include: poolID, better name, bet, amount",
+      message: "request must include: poolID, betterID, bet, amount",
     });
   } else if (bet !== "OVER" && bet !== "UNDER") {
     res.status(400).send({ message: "bet must be 'OVER' or 'UNDER'" });
@@ -648,7 +657,7 @@ app.post("/bets", (req, res) => {
     res.status(400).send({ message: "amount must be positive int" });
   } else {
     // execute
-    main(poolID, better, bet, amount)
+    main(poolID, betterID, bet, amount)
       // prisma db connection termination
       .then(async () => {
         await prisma.$disconnect();
