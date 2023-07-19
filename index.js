@@ -55,6 +55,16 @@ app.get("/users/:id", (req, res) => {
       where: {
         id: id,
       },
+      include: {
+        bets: {
+          select: {
+            id: true,
+            bet: true,
+            amount: true,
+            pool: true,
+          },
+        },
+      },
     });
     res.status(200).send(user);
   }
@@ -104,9 +114,9 @@ app.get("/users/:id/bets", (req, res) => {
       },
       select: {
         id: true,
-        poolID: true,
         bet: true,
         amount: true,
+        pool: true,
       },
     });
     res.status(200).send(bets);
@@ -303,7 +313,18 @@ app.post("/users/delete", (req, res) => {
 app.get("/pools", (req, res) => {
   // db query func
   async function main() {
-    const allPools = await prisma.pool.findMany();
+    const allPools = await prisma.pool.findMany({
+      include: {
+        bets: {
+          select: {
+            id: true,
+            bet: true,
+            amount: true,
+            better: true,
+          },
+        },
+      },
+    });
     res.status(200).send(allPools);
   }
 
@@ -319,13 +340,23 @@ app.get("/pools", (req, res) => {
     });
 });
 
-// return a pool by id
+// return a pool by id or all active pools
 app.get("/pools/:id", (req, res) => {
   // active pools query
   async function active() {
     const activePools = await prisma.pool.findMany({
       where: {
         result: "PENDING",
+      },
+      include: {
+        bets: {
+          select: {
+            id: true,
+            bet: true,
+            amount: true,
+            better: true,
+          },
+        },
       },
     });
     res.status(200).send(activePools);
@@ -335,6 +366,16 @@ app.get("/pools/:id", (req, res) => {
     const pool = await prisma.pool.findUniqueOrThrow({
       where: {
         id: id,
+      },
+      include: {
+        bets: {
+          select: {
+            id: true,
+            bet: true,
+            amount: true,
+            better: true,
+          },
+        },
       },
     });
     res.status(200).send(pool);
@@ -497,7 +538,15 @@ app.post("/pools", (req, res) => {
 app.get("/bets", (req, res) => {
   // db query func
   async function main() {
-    const allBets = await prisma.bet.findMany();
+    const allBets = await prisma.bet.findMany({
+      select: {
+        id: true,
+        better: true,
+        pool: true,
+        bet: true,
+        amount: true,
+      },
+    });
     res.status(200).send(allBets);
   }
 
