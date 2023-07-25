@@ -804,7 +804,7 @@ app.post("/pools/:id/resolve", (req, res) => {
 
     for (const winner of winners) {
       // calculate winnings proportionate to bet
-      const winnings = Math.floor((winner.bets[0].amount / winnerPool) * payout);
+      const winnings = Math.round((winner.bets[0].amount / winnerPool) * payout);
 
       await prisma.user.update({
         where: {
