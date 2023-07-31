@@ -159,11 +159,13 @@ app.post("/users", (req, res) => {
         lastName: lastName,
       },
       update: {
-        firstName: firstName,
-        lastName: lastName,
+        id: id,
       },
       where: {
-        id: id,
+        firstName_lastName: {
+          firstName: firstName,
+          lastName: lastName,
+        },
       },
     });
 
@@ -255,7 +257,7 @@ app.post("/users", (req, res) => {
 app.post("/users/delete", (req, res) => {
   // db create row
   async function main(id) {
-    // create user
+    // delete user
     const user = await prisma.user.delete({
       where: {
         id: id,
