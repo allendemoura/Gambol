@@ -696,14 +696,14 @@ app.post("/bets", (req, res) => {
   const { poolID, betterID, bet, amount } = req.body;
 
   // check req validity
-  if (!poolID || !betterID || !bet || !amount) {
+  if (amount <= 0) {
+    res.status(400).send({ message: "amount must be positive int" });
+  } else if (!poolID || !betterID || !bet || !amount) {
     res.status(400).send({
       message: "request must include: poolID, betterID, bet, amount",
     });
   } else if (bet !== "OVER" && bet !== "UNDER") {
     res.status(400).send({ message: "bet must be 'OVER' or 'UNDER'" });
-  } else if (amount <= 0) {
-    res.status(400).send({ message: "amount must be positive int" });
   } else {
     // execute
     main(poolID, betterID, bet, amount)
