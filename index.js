@@ -225,14 +225,14 @@ app.post("/users", (req, res) => {
   }
 
   // unpack req
-  const { first_name, last_name, id } = req.body.data;
+  const { first_name, last_name, primary_email_address_id } = req.body.data;
 
   // check req validity
-  if (!first_name || !last_name || !id) {
+  if (!first_name || !last_name || !primary_email_address_id) {
     res.status(400).send({ message: "request must include: first_name, last_name, and id" });
   } else {
     // send response
-    main(id, first_name, last_name)
+    main(primary_email_address_id, first_name, last_name)
       // prisma db connection termination
       .then(async () => {
         await prisma.$disconnect();
@@ -274,6 +274,49 @@ app.post("/users/update", (req, res) => {
       res.status(400).send({ message: "failure" });
     }
   }
+
+  const clerkExample = {
+    data: {
+      birthday: "",
+      created_at: 1654012591514,
+      email_addresses: [
+        {
+          email_address: "example@example.org",
+          id: "idn_29w83yL7CwVlJXylYLxcslromF1",
+          linked_to: [],
+          object: "email_address",
+          verification: {
+            status: "verified",
+            strategy: "admin",
+          },
+        },
+      ],
+      external_accounts: [],
+      external_id: null,
+      first_name: "Example",
+      gender: "",
+      id: "user_29w83sxmDNGwOuEthce5gg56FcC",
+      image_url: "https://img.clerk.com/xxxxxx",
+      last_name: null,
+      last_sign_in_at: null,
+      object: "user",
+      password_enabled: true,
+      phone_numbers: [],
+      primary_email_address_id: "idn_29w83yL7CwVlJXylYLxcslromF1",
+      primary_phone_number_id: null,
+      primary_web3_wallet_id: null,
+      private_metadata: {},
+      profile_image_url: "https://www.gravatar.com/avatar?d=mp",
+      public_metadata: {},
+      two_factor_enabled: false,
+      unsafe_metadata: {},
+      updated_at: 1654012824306,
+      username: null,
+      web3_wallets: [],
+    },
+    object: "event",
+    type: "user.updated",
+  };
 
   // pre validate req body
   if (!req.body.data) {
