@@ -253,6 +253,61 @@ app.post("/users", (req, res) => {
   }
 });
 
+// update user
+app.post("/users/update", (req, res) => {
+  // db create row
+  async function main(id, firstName, lastName) {
+    // update user
+    const user = await prisma.user.update({
+      where: {
+        id: id,
+      },
+      data: {
+        firstName: firstName,
+        lastName: lastName,
+      },
+    });
+
+    if (user) {
+      res.status(200).send({ message: "success", user });
+    } else {
+      res.status(400).send({ message: "failure" });
+    }
+  }
+
+  // pre validate req body
+  if (!req.body.data) {
+    res.status(400).send({ message: "request must include: data{}" });
+  }
+
+  // unpack req
+  const { first_name, last_name, id } = req.body.data;
+
+  // check req validity
+  if (!first_name || !last_name || !id) {
+    res.status(400).send({ message: "request must include: first_name, last_name, and id" });
+  } else {
+    // send response
+    main(id, first_name, last_name)
+      // prisma db connection termination
+      .then(async () => {
+        await prisma.$disconnect();
+      })
+      .catch(async (e) => {
+        await prisma.$disconnect();
+        if (e instanceof Prisma.PrismaClientKnownRequestError) {
+          // if user not found
+          if (e.code === "P2018") {
+            res.status(404).send({ message: "user not found" });
+          }
+        } else {
+          console.error(e);
+          process.exit(1);
+        }
+      });
+  }
+});
+
 // delete user
 app.post("/users/delete", (req, res) => {
   // db create row
