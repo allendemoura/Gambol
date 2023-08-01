@@ -324,14 +324,14 @@ app.post("/users/update", (req, res) => {
   }
 
   // unpack req
-  const { first_name, last_name, id } = req.body.data;
+  const { first_name, last_name, primary_email_address_id } = req.body.data;
 
   // check req validity
-  if (!first_name || !last_name || !id) {
+  if (!first_name || !last_name || !primary_email_address_id) {
     res.status(400).send({ message: "request must include: first_name, last_name, and id" });
   } else {
     // send response
-    main(id, first_name, last_name)
+    main(primary_email_address_id, first_name, last_name)
       // prisma db connection termination
       .then(async () => {
         await prisma.$disconnect();
