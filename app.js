@@ -1,5 +1,3 @@
-const pkg = require("@clerk/clerk-sdk-node");
-const clerk = pkg.default;
 require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
@@ -959,4 +957,4 @@ app.post("/pools/:id/resolve", (req, res) => {
 });
 
 // run app
-app.listen(PORT, () => console.log(`hollerinng on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Running on http://localhost:${PORT}`));
