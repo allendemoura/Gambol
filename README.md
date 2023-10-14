@@ -71,6 +71,10 @@ Use the API to interact with prediction markets, place bets, and retrieve market
 
 If you'd like to contribute to the Prediction Market Simulator API, please follow our feel free to submit a pull request. For major changes, please open an issue first to discuss what you would like to change.
 
+## Future Enhancements
+
+I'm planning on porting this to work as a serverless cloud functions app in the hopes that it will run faster on budget hosting services such as Digital Ocean.
+
 ## Contact
 
 For questions or support, please contact me@allendemoura.com
