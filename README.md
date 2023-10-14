@@ -38,7 +38,7 @@ To get started with the Prediction Market Simulator API, follow these steps:
 
 5. Run the application:
    ```bash
-   npm run start
+   npm start
    ```
 
 ## API Endpoints
