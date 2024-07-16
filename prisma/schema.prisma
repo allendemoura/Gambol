@@ -1,11 +1,12 @@
 generator client {
   provider = "prisma-client-js"
+  // seed = "/prisma/seed.js"
 }
 
 datasource db {
-  provider     = "mysql"
+  provider     = "postgres"
   url          = env("DATABASE_URL")
-  relationMode = "prisma"
+  // relationMode = "prisma"
 }
 
 model User {
